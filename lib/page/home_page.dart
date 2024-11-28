@@ -2,7 +2,7 @@ import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'House/housePage.dart';
 import 'Locataire/LocatairePage.dart';
-import 'Loyer/LoyerPage.dart';
+import 'Loyer/Loyer_Page.dart';
 import 'Notification/notification.dart';
 import 'Profil/ProfilPage.dart';
 import '../../page/SettingsPage.dart';
