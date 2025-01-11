@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'House/housePage.dart';
@@ -23,32 +25,42 @@ class _HomePageState extends State<HomePage> {
   final navigationKey = GlobalKey<CurvedNavigationBarState>();
   List<Map<String, dynamic>> properties = [];
   int index = 2;
-  int totalMaisons = 0;
+  int houseCount= 0;
+  double sommeTotal= 0;
+  
 
   @override
   void initState() {
     super.initState();
-    loadProperties();
-    _loadTotalMaisons();
+    _loadPropertyCount();
+    Timer.periodic(const Duration(seconds: 5), (timer) {
+    _loadPropertyCount();
+  });
   }
 
-    Future<void> _loadTotalMaisons() async {
-    final dbHelper = DBHelper();
-    final count = await dbHelper.countProperty();
+  Future<void> _loadPropertyCount() async {
+    final count = await dbHelper.getCountProperties();
     setState(() {
-      totalMaisons = count;
+      houseCount = count;
     });
   }
 
-  Future<void> loadProperties() async {
-    properties = await dbHelper.getProperties();
-    setState(() {});
-  }
+
+Future<void>loyermois() async{
+  // Calculer la somme des paiements du mois en cours avec le statut "Payé"
+  double totalSum = await dbHelper.sumpaidofmonth();
+  setState(() {
+      sommeTotal = totalSum;
+    });
+  
+}
+
+
 
   List<Widget> get screens => [
     const Center(child: Text('Notifications Page')),
     const SearchPage(),
-    HomePageContent(totalMaisons: totalMaisons), // Pass the updated value
+    HomePageContent(houseCount: houseCount, sommeTotal : sommeTotal), 
     const SettingsPage(),
     const ProfilPage(),
   ];
@@ -88,38 +100,50 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class HomePageContent extends StatelessWidget {
-  final int totalMaisons;
-  const HomePageContent({super.key, required this.totalMaisons});
+class HomePageContent extends StatefulWidget {
+  final int houseCount;
+  final double sommeTotal;
+
+  const HomePageContent({super.key, required this.houseCount, required this.sommeTotal});
 
   @override
-  Widget build(BuildContext context) {
-  return Padding(
-    padding: const EdgeInsets.all(10.0),
-    child: Padding(
-      padding: const EdgeInsets.only(top: 30.0), 
-      child: GridView.count(
-        crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        children: [
-          _buildStatCard('Maisons', '$totalMaisons', Icons.home, Colors.blue, context, const PagesListView()),
-          _buildStatCard('Loyer du Mois', '700k', Icons.paid, Colors.green, context, const RentDetailsPage()),
-          _buildStatCard('Dépenses', '1200 Fcfa', Icons.money_off, Colors.red, context, const ExpenseDetailsPage()),
-          _buildStatCard('Profit', '5000 Fcfa', Icons.trending_up, Colors.purple, context, const ProfitDetailsPage()),
-          _buildStatCard('Location', '64', Icons.person_add, Colors.orange, context, const RequestsPage()),
-          _buildStatCard('Messages', '8', Icons.message, Colors.brown, context, const MessagesPage()),
-        ],
-      ),
-    ),
-  );
+  _HomePageContentState createState() => _HomePageContentState();
 }
 
+class _HomePageContentState extends State<HomePageContent> {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 30.0),
+        child: GridView.count(
+          crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          children: [
+            _buildStatCard(
+              'Gestion des apparts.', 
+              '${widget.houseCount}', // Affiche le nombre de maisons
+              Icons.folder, 
+              Colors.orangeAccent, 
+              context, 
+              const PagesListView()
+            ),
+            _buildStatCard('Loyer du Mois', '${widget.sommeTotal}', Icons.paid, Colors.green, context, const RentDetailsPage()),
+            _buildStatCard('Dépenses', '1200 Fcfa', Icons.money_off, Colors.red, context, const ExpenseDetailsPage()),
+            _buildStatCard('Profit', '5000 Fcfa', Icons.trending_up, Colors.purple, context, const ProfitDetailsPage()),
+            _buildStatCard('Location', '64', Icons.person_add, Colors.blue, context, const RequestsPage()),
+            _buildStatCard('Messages', '8', Icons.message, Colors.brown, context, const MessagesPage()),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color, BuildContext context, Widget targetPage) {
     return InkWell(
       onTap: () {
-        // Naviguer vers une autre page lors du clic sur la carte
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => targetPage),

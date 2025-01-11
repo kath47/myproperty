@@ -22,20 +22,35 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
   }
 
   Future<void> _fetchSubscriptions() async {
+    setState(() {
+      isLoading = true; // Indicateur de chargement activé
+    });
+
     try {
       final dbHelper = DBHelper(); // Instance du gestionnaire de base de données
       final data = await dbHelper.getSubscriptions(); // Récupérer les souscriptions
+
       setState(() {
         subscriptions = data;
-        isLoading = false;
+        isLoading = false; // Indicateur de chargement désactivé
       });
     } catch (e) {
       setState(() {
-        isLoading = false;
+        isLoading = false; // Indicateur de chargement désactivé en cas d'erreur
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors du chargement des données : $e')),
-      );
+
+      // Afficher un message d'erreur à l'utilisateur si le widget est toujours monté
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors du chargement des données : $e'),
+            duration: const Duration(seconds: 3), // Durée du message
+          ),
+        );
+      }
+
+      // Loguer l'erreur pour le débogage
+      debugPrint('Erreur lors du chargement des souscriptions : $e');
     }
   }
 
@@ -56,11 +71,14 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Liste des souscriptions', style: TextStyle(color: tWhiteColor)),
+        title: const Text(
+          'Liste des souscriptions',
+          style: TextStyle(color: tWhiteColor),
+        ),
         backgroundColor: tPrimaryColor,
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator()) // Afficher un indicateur de chargement
+          ? const Center(child: CircularProgressIndicator()) // Indicateur de chargement
           : subscriptions.isEmpty
               ? const Center(
                   child: Text(
@@ -73,16 +91,17 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
                   itemBuilder: (context, index) {
                     final subscription = subscriptions[index];
                     return Card(
+                      key: ValueKey(subscription['id']), // Clé unique pour chaque élément
                       margin: const EdgeInsets.all(8.0),
                       child: ListTile(
-                        title: Text(subscription['tenantName']),
+                        title: Text(subscription['Locataire : ${subscription['tenantId']}'] ?? 'Nom inconnu'),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('ID: ${subscription['id']}'),
-                            Text('Maison: ${subscription['houseId']}'),
-                            Text('Loyer: ${subscription['rentCost']}'),
-                            Text('Statut: ${subscription['status']}'),
+                            //Text('ID: ${subscription['id'] ?? 'N/A'}'),
+                            Text('Maison: ${subscription['houseId'] ?? 'N/A'}'),
+                            Text('Loyer: ${subscription['rentCost'] ?? 'N/A'}'),
+                            Text('Statut: ${subscription['status'] ?? 'N/A'}'),
                           ],
                         ),
                         trailing: Icon(

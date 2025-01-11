@@ -17,8 +17,8 @@ Future<Database> _initDB() async {
   if (_database != null) return _database!;
   String dbpath = join(await getDatabasesPath(), 'gkimmobi.db');
 
-    await deleteDatabase(dbpath);
-    print('Old database deleted');
+    // await deleteDatabase(dbpath);
+    // print('Old database deleted');
   
   _database = await openDatabase(
     dbpath,
@@ -74,8 +74,8 @@ Future<Database> _initDB() async {
             nom TEXT NOT NULL,
             adresse TEXT NOT NULL,
             nbAppartements INTEGER NOT NULL,
-            proprietaireId INTEGER NOT NULL,
-            FOREIGN KEY (proprietaireId) REFERENCES proprietaires(id)
+            proprioId INTEGER NOT NULL,
+            FOREIGN KEY (proprioId) REFERENCES proprio(id)
           )
         ''');
 
@@ -84,7 +84,7 @@ Future<Database> _initDB() async {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             titre TEXT,
             type TEXT,
-            ownerId INTEGER,
+            proprioId INTEGER,
             numberOfRooms INTEGER,
             rentCost REAL,
             city TEXT,
@@ -93,7 +93,7 @@ Future<Database> _initDB() async {
             status TEXT,
             description TEXT,
             images TEXT,
-            FOREIGN KEY (ownerId) REFERENCES proprietaires(id)
+            FOREIGN KEY (proprioId) REFERENCES proprio(id)
           );
         ''');
 
@@ -101,7 +101,7 @@ Future<Database> _initDB() async {
       CREATE TABLE IF NOT EXISTS subscriptions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         houseId TEXT NOT NULL,
-        tenantName TEXT NOT NULL,
+        tenantId TEXT NOT NULL,
         date TEXT NOT NULL,
         rentCost REAL NOT NULL,
         cautionMonths INTEGER NOT NULL,
@@ -114,8 +114,26 @@ Future<Database> _initDB() async {
         paymentStartDate TEXT NOT NULL,
         status TEXT NOT NULL,
         FOREIGN KEY (houseId) REFERENCES proprietaires(id)
+        FOREIGN KEY (tenantId) REFERENCES locataire(id)
       )
     ''');
+
+    await db.execute('''
+    CREATE TABLE IF NOT EXISTS payment (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    locataireId INTEGER NOT NULL,
+    propertiesId INTEGER NOT NULL,
+    paymentDate TEXT NOT NULL,
+    amountPaid REAL NOT NULL,
+    amountDue REAL NOT NULL,
+    month TEXT NOT NULL,
+    year TEXT NOT NULL,
+    status TEXT NOT NULL,
+    FOREIGN KEY (locataireId) REFERENCES locataire(id),
+    FOREIGN KEY (propertiesId) REFERENCES Properties(id)
+    )
+
+  ''');
 
     },
   );
@@ -135,7 +153,7 @@ Future<Database> _initDB() async {
 
   Future<List<Map<String, dynamic>>> getProperties() async {
     final db = await _initDB();
-    return await db.query('proprio');
+    return await db.query('properties');
   }
 
   Future<List<Property>> getAllProperties() async {
@@ -235,6 +253,12 @@ Future<Database> _initDB() async {
     return null;
   }
 
+  Future<int> insertPayment(Payment payment) async {
+    final db = await _initDB();
+    return await db.insert('payment', payment.toMap(),
+    conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
   // Méthode de recherche d'un proprio
 
   Future<List<Map<String, dynamic>>> searchProperties(String query) async {
@@ -252,16 +276,27 @@ Future<void> insertLocataire(Map<String, dynamic> locataire) async {
     await db.insert('locataire', locataire, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  // Récupérer tous les locataires
+
+
   Future<List<Map<String, dynamic>>> getLocataires() async {
-    final db = await _initDB();
-    return await db.query('locataire');
-  }
+  final db = await _initDB();
+  final result = await db.query('locataire'); // Remplacez 'locataires' par le nom de votre table
+  return result;
+}
+  
   // Récupérer tous les locataires
-  Future<List<Map<String, dynamic>>> getmaisons() async {
+Future<List<Map<String, dynamic>>> getmaisons() async {
+  try {
     final db = await _initDB();
-    return await db.query('properties');
+    final List<Map<String, dynamic>> maps = await db.query('properties');
+    return maps;
+  } catch (e) {
+    print('Erreur lors de la récupération des données : $e');
+    return [];
   }
+}
+
+  
 
   //compter tous les locataires enregistré
   Future<int> countLocataires() async {
@@ -370,7 +405,127 @@ Future<void> insertProperty(Map<String, dynamic> property) async {
       whereArgs: [id],
     );
   }
+Future<int> getCountProperties() async {
+    final db = await _initDB();
+    final count = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM properties'),
+    );
+    return count ?? 0;
+  }
 
+
+Future<int> deleteProprio(int id) async {
+    final db = await _initDB();
+    return await db.delete(
+      'proprio',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // Méthode pour récupérer le nombre total de locataires
+  Future<int> getTotalLocataires() async {
+    final db = await _initDB();
+    final result = await db.rawQuery('SELECT COUNT(*) FROM locataire');
+    await Future.delayed(const Duration(seconds: 2));
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  // Méthode pour récupérer le nombre total de maisons disponibles
+  Future<int> getTotalMaisonsDisponibles() async {
+    final db = await _initDB();
+    final result = await db.rawQuery(
+      "SELECT COUNT(*) FROM properties WHERE status = 'disponible'",
+    );
+    await Future.delayed(const Duration(seconds: 2));
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  // Méthode pour récupérer le nombre total de maisons occupées
+  Future<int> getTotalMaisonsOccupees() async {
+    final db = await _initDB();
+    final result = await db.rawQuery(
+      "SELECT COUNT(*) FROM properties WHERE status = 'occupée'",
+    );
+    await Future.delayed(const Duration(seconds: 2));
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+
+// Méthode pour supprimer un paiement
+  Future<int> deletePayment(int paymentId) async {
+    final db = await _initDB();
+    return await db.delete(
+      'Payment',
+      where: 'id = ?',
+      whereArgs: [paymentId],
+    );
+  }
+
+  // Méthode pour récupérer tous les paiements
+  Future<List<Payment>> getAllPayments() async {
+    final db = await _initDB();
+
+    final result = await db.query('Payment'); // Récupère toutes les lignes de la table Payment
+
+    return result.map((json) => Payment.fromMap(json)).toList();
+  }
+
+
+
+  // Méthode pour récupérer les paiements du mois en cours avec un statut "Payé"
+  Future<double> sumpaidofmonth() async {
+    final db = await _initDB(); 
+
+    // Obtenir le mois et l'année actuels
+    final now = DateTime.now();
+    final currentMonth = _getMonthName(now.month); // Convertir le mois en nom (ex: "Octobre")
+    final currentYear = now.year;
+
+    // Requête SQL pour récupérer les paiements du mois en cours avec un statut "Payé"
+    final result = await db.rawQuery('''
+      SELECT SUM(amountPaid) as total
+      FROM payments
+      WHERE month = ? AND year = ? AND status = ?
+    ''', [currentMonth, currentYear, "Payé"]);
+
+    // Récupérer la somme totale
+    final totalSum = result.first['total'] as double? ?? 0.0;
+
+    return totalSum;
+  }
+
+  // Méthode pour convertir le numéro du mois en nom de mois
+  String _getMonthName(int month) {
+    switch (month) {
+      case 1:
+        return "Janvier";
+      case 2:
+        return "Février";
+      case 3:
+        return "Mars";
+      case 4:
+        return "Avril";
+      case 5:
+        return "Mai";
+      case 6:
+        return "Juin";
+      case 7:
+        return "Juillet";
+      case 8:
+        return "Août";
+      case 9:
+        return "Septembre";
+      case 10:
+        return "Octobre";
+      case 11:
+        return "Novembre";
+      case 12:
+        return "Décembre";
+      default:
+        return "";
+    }
+  }
 
 
 }

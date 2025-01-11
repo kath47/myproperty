@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myproperty/data/data_model.dart';
 import 'package:myproperty/data/db_helper.dart';
+import 'package:intl/intl.dart';
 import '../../Settings/colors.dart';
 
 class SouscriptionForm extends StatefulWidget {
@@ -12,7 +13,7 @@ class SouscriptionForm extends StatefulWidget {
 
 class _SouscriptionFormState extends State<SouscriptionForm> {
   final _formKey = GlobalKey<FormState>();
-
+    
   // Controllers
   final TextEditingController rentCostController = TextEditingController();
   final TextEditingController monthsCautionController = TextEditingController();
@@ -21,8 +22,6 @@ class _SouscriptionFormState extends State<SouscriptionForm> {
   final TextEditingController advanceAmountController = TextEditingController();
   final TextEditingController otherFeesLabelController = TextEditingController();
   final TextEditingController otherFeesAmountController = TextEditingController();
-  final TextEditingController entryDateController = TextEditingController();
-  final TextEditingController startPaymentDateController = TextEditingController();
   final TextEditingController dateController = TextEditingController();
 
   // Dropdown fields
@@ -38,7 +37,6 @@ class _SouscriptionFormState extends State<SouscriptionForm> {
   List<Property> properties = [];
   Property? selectedProperty;
 
-
   @override
   void dispose() {
     rentCostController.dispose();
@@ -48,95 +46,90 @@ class _SouscriptionFormState extends State<SouscriptionForm> {
     advanceAmountController.dispose();
     otherFeesLabelController.dispose();
     otherFeesAmountController.dispose();
-    entryDateController.dispose();
-    startPaymentDateController.dispose();
     dateController.dispose();
     super.dispose();
   }
 
-void saveSubscription() async {
-  if (selectedLocataire == null ||
-      selectedProperty == null ||
-      dateController.text.isEmpty ||
-      rentCostController.text.isEmpty ||
-      monthsCautionController.text.isEmpty ||
-      cautionAmountController.text.isEmpty ||
-      monthsAdvanceController.text.isEmpty ||
-      advanceAmountController.text.isEmpty ||
-      entryDateController.text.isEmpty ||
-      startPaymentDateController.text.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Veuillez remplir tous les champs obligatoires.')),
-    );
-    return;
+  void saveSubscription() async {
+    if (selectedLocataire == null ||
+        selectedProperty == null ||
+        dateController.text.isEmpty ||
+        rentCostController.text.isEmpty ||
+        monthsCautionController.text.isEmpty ||
+        cautionAmountController.text.isEmpty ||
+        monthsAdvanceController.text.isEmpty ||
+        advanceAmountController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez remplir tous les champs obligatoires.')),
+      );
+      return;
+    }
+    DateTime now = DateTime.now();
+
+    // Formater la date en différents formats
+    String shortDate = DateFormat('dd/MM/yyyy').format(now);
+
+    // Création d'un nouvel objet Subscription avec les données du formulaire
+    final newSubscription = {
+      'houseId': selectedProperty!.id,
+      'tenantId': selectedLocataire!.id,
+      'date': dateController.text,
+      'rentCost': double.tryParse(rentCostController.text) ?? 0.0,
+      'cautionMonths': int.tryParse(monthsCautionController.text) ?? 0,
+      'cautionAmount': double.tryParse(cautionAmountController.text) ?? 0.0,
+      'advanceMonths': int.tryParse(monthsAdvanceController.text) ?? 0,
+      'advanceAmount': double.tryParse(advanceAmountController.text) ?? 0.0,
+      'otherFeesLabel': otherFeesLabelController.text,
+      'otherFeesAmount': double.tryParse(otherFeesAmountController.text) ?? 0.0,
+      'entryDate': shortDate,
+      'paymentStartDate': shortDate,
+      'status': status,
+    };
+
+    try {
+      final dbHelper = DBHelper();
+      await dbHelper.insertSubscription(newSubscription);
+
+      // Notification de succès
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enregistré avec succès.')),
+      );
+
+      // Réinitialisation des champs
+      setState(() {
+        selectedLocataire = null;
+        selectedProperty = null;
+        dateController.clear();
+        rentCostController.clear();
+        monthsCautionController.clear();
+        cautionAmountController.clear();
+        monthsAdvanceController.clear();
+        advanceAmountController.clear();
+        otherFeesLabelController.clear();
+        otherFeesAmountController.clear();
+        status = 'Active';
+      });
+
+      // Fermer le formulaire
+      Navigator.pop(context);
+    } catch (e) {
+      // Gérer les erreurs
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors de l\'enregistrement : $e')),
+      );
+    }
   }
-
-  // Création d'un nouvel objet Subscription avec les données du formulaire
-  final newSubscription = {
-    'houseId': selectedProperty!,
-    'tenantName': selectedLocataire!,
-    'date': dateController.text,
-    'rentCost': double.tryParse(rentCostController.text) ?? 0.0,
-    'cautionMonths': int.tryParse(monthsCautionController.text) ?? 0,
-    'cautionAmount': double.tryParse(cautionAmountController.text) ?? 0.0,
-    'advanceMonths': int.tryParse(monthsAdvanceController.text) ?? 0,
-    'advanceAmount': double.tryParse(advanceAmountController.text) ?? 0.0,
-    'otherFeesLabel': otherFeesLabelController.text,
-    'otherFeesAmount': double.tryParse(otherFeesAmountController.text) ?? 0.0,
-    'entryDate': entryDateController.text,
-    'paymentStartDate': startPaymentDateController.text,
-    'status': status,
-  };
-
-  try {
-    final dbHelper = DBHelper();
-    await dbHelper.insertSubscription(newSubscription);
-
-    // Notification de succès
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Enregistré avec succès.')),
-    );
-
-    // Réinitialisation des champs
-    setState(() {
-      selectedLocataire = null;
-      selectedProperty = null;
-      dateController.clear();
-      rentCostController.clear();
-      monthsCautionController.clear();
-      cautionAmountController.clear();
-      monthsAdvanceController.clear();
-      advanceAmountController.clear();
-      otherFeesLabelController.clear();
-      otherFeesAmountController.clear();
-      entryDateController.clear();
-      startPaymentDateController.clear();
-      status = 'Active';
-    });
-
-    // Fermer le formulaire
-    Navigator.pop(context);
-  } catch (e) {
-    // Gérer les erreurs
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Erreur lors de l\'enregistrement : $e')),
-    );
-  }
-}
-
-
 
   @override
   void initState() {
     super.initState();
     _loadLocataires();
-    _loadMaisons();
+    _loadProperties();
   }
 
   Future<void> _loadLocataires() async {
     final dbHelper = DBHelper();
     final locataireFromDb = await dbHelper.getAllLocataires();
-
     setState(() {
       locataires = locataireFromDb;
       if (locataires.isNotEmpty) {
@@ -145,26 +138,37 @@ void saveSubscription() async {
       }
     });
   }
-  Future<void> _loadMaisons() async {
+
+  Future<void> _loadProperties() async {
     final dbHelper = DBHelper();
     final propertiesFromDb = await dbHelper.getAllProperties();
-
     setState(() {
       properties = propertiesFromDb;
       if (properties.isNotEmpty) {
         selectedProperty = properties.first;
         propertiesId = selectedProperty!.id;
+        rentCostController.text = selectedProperty!.rentCost.toString(); // Remplir le coût du loyer
       }
     });
   }
 
+  // Méthode pour calculer la caution et l'avance
+  void _calculateAmounts() {
+    final rentCost = double.tryParse(rentCostController.text) ?? 0.0;
+    final cautionMonths = int.tryParse(monthsCautionController.text) ?? 0;
+    final advanceMonths = int.tryParse(monthsAdvanceController.text) ?? 0;
+
+    setState(() {
+      cautionAmountController.text = (rentCost * cautionMonths).toStringAsFixed(2);
+      advanceAmountController.text = (rentCost * advanceMonths).toStringAsFixed(2);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Nouvelle souscription',
-            style: TextStyle(color: tWhiteColor)),
+        title: const Text('Nouvelle souscription', style: TextStyle(color: tWhiteColor)),
         backgroundColor: tPrimaryColor,
       ),
       body: Padding(
@@ -180,11 +184,9 @@ void saveSubscription() async {
                   decoration: const InputDecoration(
                     labelText: 'Identifiant Maison *',
                     border: OutlineInputBorder(),
-                    contentPadding:
-                        EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   ),
-                  value:
-                      selectedProperty, // Ensure this is properly initialized.
+                  value: selectedProperty,
                   items: properties.map((property) {
                     return DropdownMenuItem<Property>(
                       value: property,
@@ -195,6 +197,7 @@ void saveSubscription() async {
                     setState(() {
                       selectedProperty = value;
                       propertiesId = value?.id ?? 0;
+                      rentCostController.text = value?.rentCost.toString() ?? '0.0'; // Mettre à jour le coût du loyer
                     });
                   },
                 ),
@@ -204,8 +207,7 @@ void saveSubscription() async {
                   decoration: const InputDecoration(
                     labelText: 'Nom du locataire *',
                     border: OutlineInputBorder(),
-                    contentPadding:
-                        EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   ),
                   items: locataires.map((locataire) {
                     return DropdownMenuItem<Locataire>(
@@ -213,13 +215,13 @@ void saveSubscription() async {
                       child: Text(locataire.name),
                     );
                   }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedLocataire = value;
-                  locataireId = value?.id ?? 0;
-                });
-              },
-            ),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedLocataire = value;
+                      locataireId = value?.id ?? 0;
+                    });
+                  },
+                ),
                 const SizedBox(height: 10),
                 TextFormField(
                   controller: dateController,
@@ -239,8 +241,7 @@ void saveSubscription() async {
                     if (pickedDate != null) {
                       setState(() {
                         date = pickedDate;
-                        dateController.text =
-                            pickedDate.toLocal().toString().split(' ')[0];
+                        dateController.text = pickedDate.toLocal().toString().split(' ')[0];
                       });
                     }
                   },
@@ -254,6 +255,7 @@ void saveSubscription() async {
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   ),
+                  readOnly: true, // Empêche la modification manuelle
                 ),
                 const SizedBox(height: 10),
                 Row(
@@ -267,6 +269,7 @@ void saveSubscription() async {
                           border: OutlineInputBorder(),
                           contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                         ),
+                        onChanged: (value) => _calculateAmounts(), // Recalculer les montants
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -279,6 +282,7 @@ void saveSubscription() async {
                           border: OutlineInputBorder(),
                           contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                         ),
+                        readOnly: true, // Empêche la modification manuelle
                       ),
                     ),
                   ],
@@ -295,6 +299,7 @@ void saveSubscription() async {
                           border: OutlineInputBorder(),
                           contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                         ),
+                        onChanged: (value) => _calculateAmounts(), // Recalculer les montants
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -307,6 +312,7 @@ void saveSubscription() async {
                           border: OutlineInputBorder(),
                           contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                         ),
+                        readOnly: true, // Empêche la modification manuelle
                       ),
                     ),
                   ],
@@ -348,23 +354,22 @@ void saveSubscription() async {
                 ),
                 const SizedBox(height: 20),
                 Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: saveSubscription,
-                  icon: const Icon(Icons.check),
-                  label: const Text('Enregistrer'),
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: saveSubscription,
+                      icon: const Icon(Icons.check),
+                      label: const Text('Enregistrer'),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      icon: const Icon(Icons.close),
+                      label: const Text('Annuler'),
+                    ),
+                  ],
                 ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // Cancel logic
-                    Navigator.pop(context);
-                  },
-                  icon: const Icon(Icons.close),
-                  label: const Text('Annuler'),
-                ),
-              ],
-            ),
               ],
             ),
           ),

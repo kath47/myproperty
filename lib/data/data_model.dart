@@ -117,38 +117,38 @@ class User {
 }
 
 class Locataire {
-  final int id; 
+  final int id;
   final String name;
   final String? civility;
   final String? birthDate;
   final String? birthPlace;
   final String? nationality;
-  final String email;
-  final String phone;
+  final String? email; // Rendre nullable
+  final String? phone; // Rendre nullable
   final String? idType;
-  final String idNumber;
+  final String? idNumber; // Rendre nullable
   final String? function;
   final String? pet;
   final String? observation;
-  final String profileImage; 
-  final String idImage; 
+  final String? profileImage; // Rendre nullable
+  final String? idImage; // Rendre nullable
 
   Locataire({
     required this.id,
     required this.name,
-    required this.civility,
+    this.civility,
     this.birthDate,
     this.birthPlace,
     this.nationality,
-    required this.email,
-    required this.phone,
+    this.email,
+    this.phone,
     this.idType,
-    required this.idNumber,
+    this.idNumber,
     this.function,
     this.pet,
     this.observation,
-    required this.profileImage,
-    required this.idImage,
+    this.profileImage,
+    this.idImage,
   });
 
   Map<String, dynamic> toMap() {
@@ -173,8 +173,8 @@ class Locataire {
 
   factory Locataire.fromMap(Map<String, dynamic> map) {
     return Locataire(
-      id: map['id'],
-      name: map['name'],
+      id: map['id'] ?? 0, // Valeur par défaut si null
+      name: map['name'] ?? 'Inconnu', // Valeur par défaut si null
       civility: map['civility'],
       birthDate: map['birthDate'],
       birthPlace: map['birthPlace'],
@@ -204,7 +204,7 @@ class Property {
   final String quartier;
   final String status;
   final String description;
-  final List<String> images;
+  final List<String>? images;
 
   Property({
     required this.id,
@@ -218,7 +218,7 @@ class Property {
     required this.quartier,
     required this.status,
     required this.description,
-    required this.images,
+      this.images,
   });
 
   // Convert object to Map for SQLite
@@ -235,7 +235,7 @@ class Property {
       'quartier': quartier,
       'status': status,
       'description': description,
-      'images': images.join(','), 
+      'images': images?.join(','), 
     };
   }
 
@@ -333,6 +333,61 @@ class Subscription {
     );
   }
 }
+
+class Payment {
+  int? id;
+  int locataireId;
+  int propertiesId;
+  DateTime paymentDate;
+  double amountPaid;
+  double amountDue;
+  String month;
+  String year;
+  String status;
+
+  Payment({
+    this.id,
+    required this.locataireId,
+    required this.propertiesId,
+    required this.paymentDate,
+    required this.amountPaid,
+    required this.amountDue,
+    required this.month,
+    required this.year,
+    required this.status,
+  });
+
+  // Transforme une Map en objet Payment
+  factory Payment.fromMap(Map<String, dynamic> map) {
+    return Payment(
+      id: map['id'] as int?,
+      locataireId: map['locataireId'] as int,
+      propertiesId: map['propertiesId'] as int,
+      paymentDate: DateTime.parse(map['paymentDate'] as String),
+      amountPaid: map['amountPaid'] as double,
+      amountDue: map['amountDue'] as double,
+      month: map['month'] as String,
+      year: map['year'] as String,
+      status: map['status'] as String,
+    );
+  }
+
+  // Transforme un objet Payment en Map
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'locataireId': locataireId,
+      'propertiesId': propertiesId,
+      'paymentDate': paymentDate.toIso8601String(),
+      'amountPaid': amountPaid,
+      'amountDue': amountDue,
+      'month': month,
+      'year': year,
+      'status': status,
+    };
+  }
+}
+
 
 
 

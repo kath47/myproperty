@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../Settings/colors.dart';
 import '../../data/db_helper.dart';
@@ -17,30 +18,35 @@ class _ProprioListPageState extends State<ProprioListPage> {
   @override
   void initState() {
     super.initState();
-    proprietors = DBHelper().getProprios();
+    _refreshProprietorsList();
   }
 
-  // Method to open the form page to add a new owner
+  // Méthode pour rafraîchir la liste des propriétaires
+  void _refreshProprietorsList() {
+    setState(() {
+      proprietors = DBHelper().getProprios();
+    });
+  }
+
+  // Méthode pour naviguer vers la page d'ajout d'un propriétaire
   void _navigateToAddProprioPage() async {
-    // Navigate to a new page for adding a new Proprio (owner)
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ProprioPage(
           onSave: () {
-            // Votre logique après l'enregistrement des données
-            // Par exemple, vous pouvez afficher un message ou mettre à jour l'état de l'écran précédent.
-            print("Données enregistrées");
+            _refreshProprietorsList();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Propriétaire enregistré avec succès!')),
+            );
           },
         ),
       ),
     );
 
-    // If a result (new owner) is returned, update the list
+    // Si un résultat est retourné, rafraîchir la liste
     if (result != null) {
-      setState(() {
-        proprietors = DBHelper().getProprios();
-      });
+      _refreshProprietorsList();
     }
   }
 
@@ -50,6 +56,7 @@ class _ProprioListPageState extends State<ProprioListPage> {
       appBar: AppBar(
         title: const Text('Liste des Propriétaires', style: TextStyle(color: tWhiteColor)),
         backgroundColor: tPrimaryColor,
+        elevation: 4, // Ajout d'une ombre pour un effet de profondeur
       ),
       body: FutureBuilder<List<Proprio>>(
         future: proprietors,
@@ -58,23 +65,39 @@ class _ProprioListPageState extends State<ProprioListPage> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Erreur: ${snapshot.error}'));
+            return Center(child: Text('Erreur: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Aucun propriétaire trouvé.'));
+            return const Center(child: Text('Aucun propriétaire trouvé.', style: TextStyle(color: Colors.grey)));
           }
 
           final proprios = snapshot.data!;
-          return ListView.builder(
+          return ListView.separated(
             itemCount: proprios.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 4,), // Séparateur entre les éléments
             itemBuilder: (context, index) {
               final proprio = proprios[index];
-              return ListTile(
-                title: Text(proprio.name),
-                subtitle: Text(proprio.email),
-                onTap: () {
-                  // Handle item tap if necessary (e.g., show details)
-                },
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8), // Marge autour de chaque carte
+                elevation: 2, // Effet d'ombre pour chaque carte
+                child: ListTile(
+                  title: Text(proprio.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(proprio.email, style: const TextStyle(color: Colors.grey)),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () async {
+                      // Supprimer le propriétaire
+                      await DBHelper().deleteProprio(proprio.id);
+                      _refreshProprietorsList();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Propriétaire supprimé avec succès!')),
+                      );
+                    },
+                  ),
+                  onTap: () {
+                    // Naviguer vers une page de détails ou d'édition si nécessaire
+                  },
+                ),
               );
             },
           );
@@ -83,8 +106,8 @@ class _ProprioListPageState extends State<ProprioListPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToAddProprioPage,
         backgroundColor: tPrimaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
-        
+        tooltip: 'Ajouter un propriétaire',
+        child: const Icon(Icons.add, color: Colors.white), // Info-bulle pour le bouton
       ),
     );
   }

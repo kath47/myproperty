@@ -27,7 +27,7 @@ class _ProprioPageState extends State<ProprioPage> {
   // Selected values for dropdowns
   String? civility = 'Mr';
   String? nationality = 'Ivoirienne';
-  String? typepiece = 'Carte CNI';
+  String? typepiece = 'Carte d\'identité';
 
   void saveProperty() async {
     if (_formKey.currentState!.validate()) {
@@ -46,7 +46,6 @@ class _ProprioPageState extends State<ProprioPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     const fieldPadding = EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0);
@@ -59,205 +58,208 @@ class _ProprioPageState extends State<ProprioPage> {
         ),
         backgroundColor: tPrimaryColor,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              // Image placeholder
-              Container(
-                height: 100,
-                width: 100,
-                color: Colors.grey[300],
-                child: const Icon(Icons.person, size: 50),
-              ),
-              const SizedBox(height: 16),
-              // Civility, Name, and Nationality Row
-              Row(
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: DropdownButtonFormField<String>(
-                      value: civility,
-                      decoration: const InputDecoration(
-                        labelText: 'Civilité',
-                        border: OutlineInputBorder(),
-                        contentPadding: fieldPadding,
-                      ),
-                      items: ['Mr', 'Ms', 'Mme'].map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          civility = value;
-                        });
-                      },
-                    ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                // Image placeholder
+                Container(
+                  height: 100,
+                  width: 100,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(50),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 2,
-                    child: TextFormField(
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nom et Prénoms',
-                        border: OutlineInputBorder(),
-                        contentPadding: fieldPadding,
+                  child: const Icon(Icons.person, size: 50),
+                ),
+                const SizedBox(height: 16),
+                // Civility, Name, and Nationality Row
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: DropdownButtonFormField<String>(
+                        value: civility,
+                        decoration: const InputDecoration(
+                          labelText: 'Civilité',
+                          border: OutlineInputBorder(),
+                          contentPadding: fieldPadding,
+                        ),
+                        items: ['Mr', 'Ms', 'Mme'].map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            civility = value;
+                          });
+                        },
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Nom et Prénoms requis';
-                        }
-                        return null;
-                      },
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: TextFormField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Nom et Prénoms',
+                          border: OutlineInputBorder(),
+                          contentPadding: fieldPadding,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Nom et Prénoms requis';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
 
-              // Nationality Dropdown
-              DropdownButtonFormField<String>(
-                value: nationality,
-                decoration: const InputDecoration(
-                  labelText: 'Nationalité',
-                  border: OutlineInputBorder(),
-                  contentPadding: fieldPadding,
+                // Nationality Dropdown
+                DropdownButtonFormField<String>(
+                  value: nationality,
+                  decoration: const InputDecoration(
+                    labelText: 'Nationalité',
+                    border: OutlineInputBorder(),
+                    contentPadding: fieldPadding,
+                  ),
+                  items: [
+                    'Ivoirienne',
+                    'Burkinabé',
+                    'Malienne',
+                    'Guinéene',
+                    'Nigériane',
+                    'Ghanéene','Libanaise','Libérienne'
+                  ].map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      nationality = value;
+                    });
+                  },
                 ),
-                items: [
-                  'Ivoirienne',
-                  'Burkinabé',
-                  'Malienne',
-                  'Guinéene',
-                  'Nigériane',
-                  'Ghanéene'
-                ].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    nationality = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 8),
+                const SizedBox(height: 8),
 
-              // Phone, Email, Address Fields
-              TextFormField(
-                controller: phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Téléphone',
-                  border: OutlineInputBorder(),
-                  contentPadding: fieldPadding,
+                // Phone, Email, Address Fields
+                TextFormField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Téléphone',
+                    border: OutlineInputBorder(),
+                    contentPadding: fieldPadding,
+                  ),
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Numéro de téléphone requis';
+                    }
+                    return null;
+                  },
                 ),
-                keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Numéro de téléphone requis';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: 'E-mail',
-                  border: OutlineInputBorder(),
-                  contentPadding: fieldPadding,
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'E-mail',
+                    border: OutlineInputBorder(),
+                    contentPadding: fieldPadding,
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'E-mail requis';
+                    }
+                    return null;
+                  },
                 ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'E-mail requis';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: adresseController,
-                decoration: const InputDecoration(
-                  labelText: 'Adresse',
-                  border: OutlineInputBorder(),
-                  contentPadding: fieldPadding,
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: adresseController,
+                  decoration: const InputDecoration(
+                    labelText: 'Adresse',
+                    border: OutlineInputBorder(),
+                    contentPadding: fieldPadding,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
+                const SizedBox(height: 8),
 
-              // ID Type and Number Fields
-              Row(
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: DropdownButtonFormField<String>(
-                      value: typepiece,
-                      decoration: const InputDecoration(
-                        labelText: 'Type pièce',
-                        border: OutlineInputBorder(),
-                        contentPadding: fieldPadding,
+                // ID Type and Number Fields
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: DropdownButtonFormField<String>(
+                        value: typepiece,
+                        decoration: const InputDecoration(
+                          labelText: 'Type pièce',
+                          border: OutlineInputBorder(),
+                          contentPadding: fieldPadding,
+                        ),
+                        items: ['Carte d\'identité', 'Attestation', 'Autres'].map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            typepiece = value;
+                          });
+                        },
                       ),
-                      items: ['Carte CNI', 'Attestation', 'Autres'].map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          typepiece = value;
-                        });
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextFormField(
+                        controller: numeropieceController,
+                        decoration: const InputDecoration(
+                          labelText: 'N° de pièce',
+                          border: OutlineInputBorder(),
+                          contentPadding: fieldPadding,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                // Buttons
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: saveProperty,
+                      icon: const Icon(Icons.check, color: tWhiteColor),
+                      label: const Text('Enregistrer', style: TextStyle(color: tWhiteColor)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal,
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
                       },
+                      icon: const Icon(Icons.close),
+                      label: const Text('Annuler'),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextFormField(
-                      controller: numeropieceController,
-                      decoration: const InputDecoration(
-                        labelText: 'N° de pièce',
-                        border: OutlineInputBorder(),
-                        contentPadding: fieldPadding,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              // Buttons
-              const SizedBox(height: 20),
-              
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: saveProperty,
-                    icon: const Icon(Icons.check, color: tWhiteColor),
-                    label: const Text('Enregistrer', style: TextStyle(color: tWhiteColor)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.close),
-                    label: const Text('Annuler'),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
-
 }

@@ -1,11 +1,10 @@
+import 'dart:async';
 import 'dart:collection';
 import 'package:flutter/material.dart';
-
 import '../../Settings/colors.dart';
 import '../../data/data_model.dart';
 import '../../data/db_helper.dart';
 import 'add_house.dart';
-
 
 class ListeAppartement extends StatefulWidget {
   const ListeAppartement({super.key});
@@ -20,6 +19,7 @@ class _ListeAppartement extends State<ListeAppartement> {
 
   HashSet<Property> selectedItem = HashSet();
   bool isMultiSelectionEnabled = false;
+  String? localisation;
 
   @override
   void initState() {
@@ -29,33 +29,36 @@ class _ListeAppartement extends State<ListeAppartement> {
 
   Future<void> _loadMaisons() async {
     final dbHelper = DBHelper();
-    final data = await dbHelper.getmaisons();
-    setState(() {
-      maisonList = data.map((item) => Property.fromMap(item)).toList();
-      isLoading = false;
-    });
-  }
-
-   // Méthode pour actualiser la page liste après enregistrement
-  void _navigateToAddProprioPage() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PropertyForm(
-          onSave: () {
-            print("Données enregistrées");
-          },
-        ),
-      ),
-    );
-    if (result != null) {
+    try {
+      print('Chargement des données...');
+      final data = await dbHelper.getmaisons();
+      print('Données récupérées : $data');
       setState(() {
-        _loadMaisons();
+        maisonList = data.map((item) => Property.fromMap(item)).toList();
+        isLoading = false;
+      });
+      print('Liste des maisons mise à jour : ${maisonList.length} maisons');
+    } catch (e) {
+      print('Erreur lors du chargement des données : $e');
+      setState(() {
         isLoading = false;
       });
     }
   }
 
+  // Méthode pour naviguer vers la page d'ajout d'une propriété
+  void _navigateToAddProprioPage() async {
+    // Naviguer vers PropertyForm sans passer de callback onSave
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PropertyForm(), // Supprimez l'argument onSave
+      ),
+    );
+
+    // Recharger les données après le retour de PropertyForm
+    _loadMaisons();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,28 +74,24 @@ class _ListeAppartement extends State<ListeAppartement> {
                 },
                 icon: const Icon(Icons.close))
             : null,
-        title: Text(isMultiSelectionEnabled
-            ? getSelectedItemCount()
-            : "Liste des maisons", style: const TextStyle(color: tWhiteColor)),
-            backgroundColor: tPrimaryColor,
+        title: Text(
+          isMultiSelectionEnabled
+              ? getSelectedItemCount()
+              : "Liste des maisons",
+          style: const TextStyle(color: tWhiteColor),
+        ),
+        backgroundColor: tPrimaryColor,
         actions: [
           Visibility(
               visible: selectedItem.isNotEmpty,
               child: IconButton(
                 icon: const Icon(Icons.delete),
                 onPressed: () {
-                  selectedItem.forEach((properties) {
-                    maisonList.remove(properties);
+                  setState(() {
+                    maisonList.removeWhere((property) => selectedItem.contains(property));
+                    selectedItem.clear();
                   });
-                  selectedItem.clear();
-                  setState(() {});
                 },
-              )),
-          Visibility(
-              visible: selectedItem.isNotEmpty,
-              child: IconButton(
-                icon: const Icon(Icons.share),
-                onPressed: () {},
               )),
         ],
       ),
@@ -103,33 +102,35 @@ class _ListeAppartement extends State<ListeAppartement> {
                   child: Text(
                   'Aucune donnée disponible.',
                   style: TextStyle(fontSize: 18, color: Colors.grey),
-              ))
-          :ListView(
-        children: maisonList.map((Property properties) {
-          return Card(
-              elevation: 10,
-              margin: const EdgeInsets.only(left: 10, right: 10, top: 5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              child: Container(
-                margin: const EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 5),
-                height: 70.0,
-                child: getListItem(properties),
-              ));
-        }).toList(),
-      ),
+                ))
+              : ListView(
+                  children: maisonList.map((Property properties) {
+                    return Card(
+                      elevation: 10,
+                      margin: const EdgeInsets.only(left: 10, right: 10, top: 5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Container(
+                        margin: const EdgeInsets.all(10),
+                        height: 95.0,
+                        child: getListItem(properties),
+                      ),
+                    );
+                  }).toList(),
+                ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToAddProprioPage,
         backgroundColor: tPrimaryColor,
         child: const Icon(Icons.add, color: Colors.white),
-        
       ),
     );
   }
 
   String getSelectedItemCount() {
     return selectedItem.isNotEmpty
-        ? "${selectedItem.length} item selected"
-        : "No item selected";
+        ? "${selectedItem.length} sélectionné(s)"
+        : "Aucune sélection";
   }
 
   void doMultiSelection(Property properties) {
@@ -140,67 +141,58 @@ class _ListeAppartement extends State<ListeAppartement> {
         selectedItem.add(properties);
       }
       setState(() {});
-    } else {
-      //Other logic
     }
   }
 
   InkWell getListItem(Property properties) {
     return InkWell(
-        onTap: () {
-          doMultiSelection(properties);
-        },
-        onLongPress: () {
-          isMultiSelectionEnabled = true;
-          doMultiSelection(properties);
-        },
-        child: Stack(alignment: Alignment.centerRight, children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Image.asset(
-                properties.images.isNotEmpty
-                    ? properties.images[0]
-                    : 'assets/images/default_image.png',
-                height: 80,
-                width: 80,
+      onTap: () {
+        doMultiSelection(properties);
+      },
+      onLongPress: () {
+        isMultiSelectionEnabled = true;
+        doMultiSelection(properties);
+      },
+      child: Stack(alignment: Alignment.centerRight, children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Image.asset(
+              properties.images!.isNotEmpty
+                  ? properties.images![0]
+                  : 'assets/images/default_image.png',
+              height: 80,
+              width: 80,
+              fit: BoxFit.cover,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const SizedBox(height: 10),
+                  Text(
+                    properties.titre,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Text('${properties.city}, ${properties.commune}, ${properties.quartier}'),
+                  Text(properties.description),
+                ],
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    const SizedBox( height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 18.0,
-                      child: Text(properties.type),
-                    ),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 18.0,
-                      child: Text(properties.city),
-                    ),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 18.0,
-                      child: Text(properties.commune),
-                    ),
-                  ],
-                ),
-              )
-            ],
+            ),
+          ],
+        ),
+        Visibility(
+          visible: isMultiSelectionEnabled,
+          child: Icon(
+            selectedItem.contains(properties)
+                ? Icons.check_circle
+                : Icons.radio_button_unchecked,
+            size: 30,
+            color: Colors.red,
           ),
-          Visibility(
-              visible: isMultiSelectionEnabled,
-              child: Icon(
-                selectedItem.contains(properties)
-                    ? Icons.check_circle
-                    : Icons.radio_button_unchecked,
-                size: 30,
-                color: Colors.red,
-              ))
-        ]));
+        ),
+      ]),
+    );
   }
-  
 }

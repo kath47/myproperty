@@ -1,9 +1,51 @@
 import 'package:flutter/material.dart';
 
-class PropertyStatsCard extends StatelessWidget {
+import '../../data/db_helper.dart';
 
-  const PropertyStatsCard({super.key, 
-  });
+class PropertyStatsCard extends StatefulWidget {
+  const PropertyStatsCard({super.key});
+
+  @override
+  _PropertyStatsCardState createState() => _PropertyStatsCardState();
+}
+
+class _PropertyStatsCardState extends State<PropertyStatsCard> {
+  int totalLocataires = 0;
+  int totalMaisonsDisponibles = 0;
+  int totalMaisonsOccupees = 0;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPropertyStats();
+  }
+
+  // Méthode pour charger les données
+  Future<void> _loadPropertyStats() async {
+    final dbHelper = DBHelper();
+
+    try {
+      final locataires = await dbHelper.getTotalLocataires();
+      final maisonsDisponibles = await dbHelper.getTotalMaisonsDisponibles();
+      final maisonsOccupees = await dbHelper.getTotalMaisonsOccupees();
+
+      setState(() {
+        totalLocataires = locataires;
+        totalMaisonsDisponibles = maisonsDisponibles;
+        totalMaisonsOccupees = maisonsOccupees;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      // Afficher un message d'erreur à l'utilisateur
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors du chargement des données: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,14 +70,16 @@ class PropertyStatsCard extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatColumn('Locataire', 3, Icons.account_circle),
-                _buildStatColumn('Disponible', 27, Icons.home),
-                _buildStatColumn('Occupée', 14, Icons.home_outlined),
-              ],
-            ),
+            isLoading
+                ? const CircularProgressIndicator()
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildStatColumn('Locataire', totalLocataires, Icons.account_circle),
+                      _buildStatColumn('Disponible', totalMaisonsDisponibles, Icons.home),
+                      _buildStatColumn('Occupée', totalMaisonsOccupees, Icons.home_outlined),
+                    ],
+                  ),
           ],
         ),
       ),
@@ -70,3 +114,24 @@ class PropertyStatsCard extends StatelessWidget {
     );
   }
 }
+
+// Classe fictive pour DBHelper (à remplacer par votre implémentation réelle)
+// class DBHelper {
+//   Future<int> getTotalLocataires() async {
+//     // Simuler une requête asynchrone
+//     await Future.delayed(const Duration(seconds: 2));
+//     return 10; // Valeur de test
+//   }
+
+//   Future<int> getTotalMaisonsDisponibles() async {
+//     // Simuler une requête asynchrone
+//     await Future.delayed(const Duration(seconds: 2));
+//     return 5; // Valeur de test
+//   }
+
+//   Future<int> getTotalMaisonsOccupees() async {
+//     // Simuler une requête asynchrone
+//     await Future.delayed(const Duration(seconds: 2));
+//     return 3; // Valeur de test
+//   }
+// }

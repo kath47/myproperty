@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../Settings/colors.dart';
 import '../../data/db_helper.dart';
@@ -20,6 +22,7 @@ class _PagesListViewState extends State<PagesListView> {
   int totalProprietaires = 0;
   int totalMaisons = 0;
   bool isLoading = true;
+  Timer? _timer;
 
   @override
   void initState() {
@@ -27,6 +30,15 @@ class _PagesListViewState extends State<PagesListView> {
     _loadTotalProprietaires();
     _loadTotalLocataires();
     _loadTotalMaisons();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+    _loadTotalMaisons();
+    _loadTotalProprietaires();
+    _loadTotalLocataires();
+    });
+      }
+  });
   }
 
   Future<void> _loadTotalLocataires() async {
@@ -54,6 +66,12 @@ class _PagesListViewState extends State<PagesListView> {
       totalMaisons = count;
       isLoading = false;
     });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel(); // Annuler le timer
+    super.dispose();
   }
 
   @override

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../data/data_model.dart';
+import '../../data/db_helper.dart';
+
 class PaymentFormPage extends StatefulWidget {
   const PaymentFormPage({super.key});
 
@@ -15,8 +18,74 @@ class _PaymentFormPageState extends State<PaymentFormPage> {
   String? selectedStatus;
   DateTime? selectedDate;
 
-  final List<String> houseIds = ['Maison 1', 'Maison 2', 'Maison 3'];
   final TextEditingController dateController = TextEditingController();
+  final TextEditingController rentCostController = TextEditingController();
+  final TextEditingController rentDuController = TextEditingController();
+
+  int locataireId = 0;
+  List<Locataire> locataires = [];
+  Locataire? selectedLocataire;
+
+  int propertiesId = 0;
+  List<Property> properties = [];
+  Property? selectedProperty;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLocataires();
+    _loadProperties();
+  }
+
+  Future<void> _loadLocataires() async {
+    final dbHelper = DBHelper();
+    final locataireFromDb = await dbHelper.getAllLocataires();
+    setState(() {
+      locataires = locataireFromDb;
+      if (locataires.isNotEmpty) {
+        selectedLocataire = locataires.first;
+        locataireId = selectedLocataire!.id;
+      }
+    });
+  }
+
+  Future<void> _loadProperties() async {
+    final dbHelper = DBHelper();
+    final propertiesFromDb = await dbHelper.getAllProperties();
+    setState(() {
+      properties = propertiesFromDb;
+      if (properties.isNotEmpty) {
+        selectedProperty = properties.first;
+        propertiesId = selectedProperty!.id;
+        rentCostController.text = selectedProperty!.rentCost.toString();
+      }
+    });
+  }
+
+  void savepayment() async {
+    if (_formKey.currentState?.validate() == true) {
+      final dbHelper = DBHelper();
+
+      final payment = Payment(
+        locataireId: locataireId,
+        propertiesId: propertiesId,
+        paymentDate: selectedDate!,
+        amountPaid: double.parse(rentCostController.text),
+        amountDue: double.parse(rentDuController.text), 
+        month: selectedMonth!,
+        year: selectedYear!,
+        status: selectedStatus!,
+      );
+
+      await dbHelper.insertPayment(payment);
+
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Paiement enregistré avec succès')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,25 +110,28 @@ class _PaymentFormPageState extends State<PaymentFormPage> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
+                DropdownButtonFormField<Property>(
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   ),
                   hint: const Text('Sélectionnez une maison'),
-                  items: houseIds.map((houseId) {
-                    return DropdownMenuItem(
-                      value: houseId,
-                      child: Text(houseId),
+                  value: selectedProperty,
+                  items: properties.map((property) {
+                    return DropdownMenuItem<Property>(
+                      value: property,
+                      child: Text(property.titre),
                     );
                   }).toList(),
                   onChanged: (value) {
                     setState(() {
-                      selectedHouseId = value;
+                      selectedProperty = value;
+                      propertiesId = value?.id ?? 0;
+                      rentCostController.text = value?.rentCost.toString() ?? '0.0';
                     });
                   },
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    if (value == null) {
                       return 'Veuillez sélectionner une maison';
                     }
                     return null;
@@ -71,15 +143,28 @@ class _PaymentFormPageState extends State<PaymentFormPage> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                TextFormField(
+                DropdownButtonFormField<Locataire>(
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     hintText: 'Entrez le nom du locataire',
                     contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   ),
+                  value: selectedLocataire,
+                  items: locataires.map((locataire) {
+                    return DropdownMenuItem<Locataire>(
+                      value: locataire,
+                      child: Text(locataire.name),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedLocataire = value;
+                      locataireId = value?.id ?? 0;
+                    });
+                  },
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Ce champ est obligatoire';
+                    if (value == null) {
+                      return 'Veuillez sélectionner un locataire';
                     }
                     return null;
                   },
@@ -134,6 +219,7 @@ class _PaymentFormPageState extends State<PaymentFormPage> {
                           ),
                           const SizedBox(height: 8),
                           TextFormField(
+                            controller: rentCostController,
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
@@ -141,6 +227,7 @@ class _PaymentFormPageState extends State<PaymentFormPage> {
                               contentPadding:
                                   EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                             ),
+                            readOnly: false,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Ce champ est obligatoire';
@@ -162,6 +249,7 @@ class _PaymentFormPageState extends State<PaymentFormPage> {
                           ),
                           const SizedBox(height: 8),
                           TextFormField(
+                            controller: rentDuController,
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
@@ -200,6 +288,7 @@ class _PaymentFormPageState extends State<PaymentFormPage> {
                                   EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                             ),
                             hint: const Text('Mois'),
+                            value: selectedMonth,
                             items: [
                               'Janvier',
                               'Février',
@@ -224,6 +313,12 @@ class _PaymentFormPageState extends State<PaymentFormPage> {
                                 selectedMonth = value;
                               });
                             },
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Veuillez sélectionner un mois';
+                              }
+                              return null;
+                            },
                           ),
                         ],
                       ),
@@ -245,6 +340,7 @@ class _PaymentFormPageState extends State<PaymentFormPage> {
                                   EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                             ),
                             hint: const Text('Année'),
+                            value: selectedYear,
                             items: [
                               '2023',
                               '2024',
@@ -259,6 +355,12 @@ class _PaymentFormPageState extends State<PaymentFormPage> {
                               setState(() {
                                 selectedYear = value;
                               });
+                            },
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Veuillez sélectionner une année';
+                              }
+                              return null;
                             },
                           ),
                         ],
@@ -278,6 +380,7 @@ class _PaymentFormPageState extends State<PaymentFormPage> {
                     contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   ),
                   hint: const Text('Sélectionnez un statut'),
+                  value: selectedStatus,
                   items: [
                     'Payé',
                     'Non Payé',
@@ -293,19 +396,19 @@ class _PaymentFormPageState extends State<PaymentFormPage> {
                       selectedStatus = value;
                     });
                   },
+                  validator: (value) {
+                    if (value == null) {
+                      return 'Veuillez sélectionner un statut';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ElevatedButton.icon(
-                      onPressed: () {
-                        if (_formKey.currentState?.validate() == true) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Paiement enregistré avec succès')),
-                          );
-                        }
-                      },
+                      onPressed: savepayment,
                       icon: const Icon(Icons.check),
                       label: const Text('Enregistrer'),
                     ),
