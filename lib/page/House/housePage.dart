@@ -30,12 +30,14 @@ class _PagesListViewState extends State<PagesListView> {
     _loadTotalProprietaires();
     _loadTotalLocataires();
     _loadTotalMaisons();
+    _loadTotalSubcription();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
         setState(() {
     _loadTotalMaisons();
     _loadTotalProprietaires();
     _loadTotalLocataires();
+    _loadTotalSubcription();
     });
       }
   });
@@ -64,6 +66,14 @@ class _PagesListViewState extends State<PagesListView> {
     final count = await dbHelper.countProperty();
     setState(() {
       totalMaisons = count;
+      isLoading = false;
+    });
+  }
+  Future<void> _loadTotalSubcription() async {
+    final dbHelper = DBHelper();
+    final count = await dbHelper.countSouscription();
+    setState(() {
+      totalSouscription = count;
       isLoading = false;
     });
   }
@@ -166,7 +176,7 @@ class _PagesListViewState extends State<PagesListView> {
           title,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        subtitle: Text('$recordCount enregistrements'),
+        subtitle: Text('$recordCount enregistré(s)'),
         trailing: const Icon(Icons.arrow_forward_ios),
       ),
     );

@@ -10,16 +10,14 @@ class ListeAppartement extends StatefulWidget {
   const ListeAppartement({super.key});
 
   @override
-  State<ListeAppartement> createState() => _ListeAppartement();
+  State<ListeAppartement> createState() => _ListeAppartementState();
 }
 
-class _ListeAppartement extends State<ListeAppartement> {
+class _ListeAppartementState extends State<ListeAppartement> {
   List<Property> maisonList = [];
   bool isLoading = true;
-
   HashSet<Property> selectedItem = HashSet();
   bool isMultiSelectionEnabled = false;
-  String? localisation;
 
   @override
   void initState() {
@@ -27,6 +25,7 @@ class _ListeAppartement extends State<ListeAppartement> {
     _loadMaisons();
   }
 
+  // Charge les maisons depuis la base de données
   Future<void> _loadMaisons() async {
     final dbHelper = DBHelper();
     try {
@@ -46,33 +45,37 @@ class _ListeAppartement extends State<ListeAppartement> {
     }
   }
 
-  // Méthode pour naviguer vers la page d'ajout d'une propriété
+  // Navigue vers la page d'ajout d'une propriété
   void _navigateToAddProprioPage() async {
-    // Naviguer vers PropertyForm sans passer de callback onSave
-    await Navigator.push(
+    // Attend le retour de la page d'ajout
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const PropertyForm(), // Supprimez l'argument onSave
+        builder: (context) => const PropertyForm(),
       ),
     );
 
-    // Recharger les données après le retour de PropertyForm
-    _loadMaisons();
+    // Si une nouvelle propriété a été ajoutée, recharge les données
+    if (result == true) {
+      _loadMaisons();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        centerTitle: isMultiSelectionEnabled ? false : true,
+        centerTitle: !isMultiSelectionEnabled,
         leading: isMultiSelectionEnabled
             ? IconButton(
                 onPressed: () {
-                  selectedItem.clear();
-                  isMultiSelectionEnabled = false;
-                  setState(() {});
+                  setState(() {
+                    selectedItem.clear();
+                    isMultiSelectionEnabled = false;
+                  });
                 },
-                icon: const Icon(Icons.close))
+                icon: const Icon(Icons.close),
+              )
             : null,
         title: Text(
           isMultiSelectionEnabled
@@ -83,16 +86,12 @@ class _ListeAppartement extends State<ListeAppartement> {
         backgroundColor: tPrimaryColor,
         actions: [
           Visibility(
-              visible: selectedItem.isNotEmpty,
-              child: IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () {
-                  setState(() {
-                    maisonList.removeWhere((property) => selectedItem.contains(property));
-                    selectedItem.clear();
-                  });
-                },
-              )),
+            visible: selectedItem.isNotEmpty,
+            child: IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: _deleteSelectedItems,
+            ),
+          ),
         ],
       ),
       body: isLoading
@@ -100,9 +99,10 @@ class _ListeAppartement extends State<ListeAppartement> {
           : maisonList.isEmpty
               ? const Center(
                   child: Text(
-                  'Aucune donnée disponible.',
-                  style: TextStyle(fontSize: 18, color: Colors.grey),
-                ))
+                    'Aucune donnée disponible.',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                )
               : ListView(
                   children: maisonList.map((Property properties) {
                     return Card(
@@ -127,72 +127,110 @@ class _ListeAppartement extends State<ListeAppartement> {
     );
   }
 
+  // Supprime les éléments sélectionnés
+  void _deleteSelectedItems() async {
+    final dbHelper = DBHelper();
+    try {
+      for (final property in selectedItem) {
+        await dbHelper.deleteProperty(property.id);
+      }
+      setState(() {
+        maisonList.removeWhere((property) => selectedItem.contains(property));
+        selectedItem.clear();
+        isMultiSelectionEnabled = false;
+      });
+    } catch (e) {
+      print('Erreur lors de la suppression : $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erreur lors de la suppression des éléments')),
+      );
+    }
+  }
+
+  // Retourne le nombre d'éléments sélectionnés
   String getSelectedItemCount() {
     return selectedItem.isNotEmpty
         ? "${selectedItem.length} sélectionné(s)"
         : "Aucune sélection";
   }
 
+  // Gère la sélection multiple
   void doMultiSelection(Property properties) {
-    if (isMultiSelectionEnabled) {
+    setState(() {
       if (selectedItem.contains(properties)) {
         selectedItem.remove(properties);
       } else {
         selectedItem.add(properties);
       }
-      setState(() {});
-    }
+    });
   }
 
+  // Construit un élément de la liste
   InkWell getListItem(Property properties) {
     return InkWell(
       onTap: () {
-        doMultiSelection(properties);
+        if (isMultiSelectionEnabled) {
+          doMultiSelection(properties);
+        }
       },
       onLongPress: () {
-        isMultiSelectionEnabled = true;
-        doMultiSelection(properties);
+        setState(() {
+          isMultiSelectionEnabled = true;
+          doMultiSelection(properties);
+        });
       },
-      child: Stack(alignment: Alignment.centerRight, children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Image.asset(
-              properties.images!.isNotEmpty
-                  ? properties.images![0]
-                  : 'assets/images/default_image.png',
-              height: 80,
-              width: 80,
-              fit: BoxFit.cover,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const SizedBox(height: 10),
-                  Text(
-                    properties.titre,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  Text('${properties.city}, ${properties.commune}, ${properties.quartier}'),
-                  Text(properties.description),
-                ],
+      child: Stack(
+        alignment: Alignment.centerRight,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Image.asset(
+                properties.images?.isNotEmpty == true
+                    ? properties.images![0]
+                    : 'assets/images/default_image.png',
+                height: 80,
+                width: 80,
+                fit: BoxFit.cover,
               ),
-            ),
-          ],
-        ),
-        Visibility(
-          visible: isMultiSelectionEnabled,
-          child: Icon(
-            selectedItem.contains(properties)
-                ? Icons.check_circle
-                : Icons.radio_button_unchecked,
-            size: 30,
-            color: Colors.red,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const SizedBox(height: 10),
+                    Text(
+                      properties.titre ?? 'Titre inconnu',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '${properties.city ?? ''}, ${properties.commune ?? ''}, ${properties.quartier ?? ''}',
+                    ),
+                    Text(
+                      properties.description ?? 'Description inconnue',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ),
-      ]),
+          Visibility(
+            visible: isMultiSelectionEnabled,
+            child: Icon(
+              selectedItem.contains(properties)
+                  ? Icons.check_circle
+                  : Icons.radio_button_unchecked,
+              size: 30,
+              color: Colors.red,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

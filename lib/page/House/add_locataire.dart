@@ -103,7 +103,7 @@ class _LocataireFormState extends State<LocataireForm> {
 
     try {
       // Appel à la méthode pour insérer les données dans la base de données
-      final dbHelper = DBHelper(); // Instance de votre DatabaseHelper
+      final dbHelper = DBHelper(); 
       await dbHelper.insertLocataire(locataire);
       // Afficher un message de succès
       ScaffoldMessenger.of(context).showSnackBar(

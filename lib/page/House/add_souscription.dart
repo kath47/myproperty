@@ -5,7 +5,10 @@ import 'package:intl/intl.dart';
 import '../../Settings/colors.dart';
 
 class SouscriptionForm extends StatefulWidget {
-  const SouscriptionForm({super.key});
+  final VoidCallback onSave;
+
+  const SouscriptionForm({Key? key, required this.onSave});
+
 
   @override
   _SouscriptionFormState createState() => _SouscriptionFormState();
@@ -109,6 +112,9 @@ class _SouscriptionFormState extends State<SouscriptionForm> {
         otherFeesAmountController.clear();
         status = 'Active';
       });
+
+      // Appeler le callback pour informer la page parente
+      widget.onSave();
 
       // Fermer le formulaire
       Navigator.pop(context);

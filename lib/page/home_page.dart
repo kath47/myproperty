@@ -25,17 +25,23 @@ class _HomePageState extends State<HomePage> {
   final navigationKey = GlobalKey<CurvedNavigationBarState>();
   List<Map<String, dynamic>> properties = [];
   int index = 2;
-  int houseCount= 0;
-  double sommeTotal= 0;
-  
+  int houseCount = 0;
+  double sommeTotal = 0;
+  double _totalExpenses = 0.0;
 
   @override
   void initState() {
     super.initState();
-    _loadPropertyCount();
-    Timer.periodic(const Duration(seconds: 5), (timer) {
-    _loadPropertyCount();
-  });
+    _initializeData();
+    Timer.periodic(const Duration(seconds: 2), (timer) {
+      _initializeData();
+    });
+  }
+
+  Future<void> _initializeData() async {
+    await _loadPropertyCount();
+    await _loadTotalExpenses();
+    await loyermois(); // Charger la somme des loyers
   }
 
   Future<void> _loadPropertyCount() async {
@@ -45,22 +51,34 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> _loadTotalExpenses() async {
+    try {
+      final total = await dbHelper.getTotalExpenses();
+      setState(() {
+        _totalExpenses = total;
+        print('Total des dépenses : $_totalExpenses'); // Log pour déboguer
+      });
+    } catch (e) {
+      print('Erreur lors du calcul du total des dépenses : $e');
+    }
+  }
 
-Future<void>loyermois() async{
-  // Calculer la somme des paiements du mois en cours avec le statut "Payé"
-  double totalSum = await dbHelper.sumpaidofmonth();
-  setState(() {
-      sommeTotal = totalSum;
-    });
-  
-}
-
-
+  Future<void> loyermois() async {
+    try {
+      final totalSum = await dbHelper.sumpaidofmonth();
+      setState(() {
+        sommeTotal = totalSum;
+        print('Somme des loyers payés ce mois-ci : $sommeTotal'); // Log pour déboguer
+      });
+    } catch (e) {
+      print('Erreur lors du calcul de la somme des loyers : $e');
+    }
+  }
 
   List<Widget> get screens => [
     const Center(child: Text('Notifications Page')),
     const SearchPage(),
-    HomePageContent(houseCount: houseCount, sommeTotal : sommeTotal), 
+    HomePageContent(houseCount: houseCount, sommeTotal: sommeTotal, totalExpenses: _totalExpenses), 
     const SettingsPage(),
     const ProfilPage(),
   ];
@@ -78,7 +96,7 @@ Future<void>loyermois() async{
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        title: const Text('GK-Immobi',style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),),
+        title: const Text('GK-Immobi', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: Colors.teal,
       ),
       body: screens[index], 
@@ -100,11 +118,13 @@ Future<void>loyermois() async{
   }
 }
 
+
 class HomePageContent extends StatefulWidget {
   final int houseCount;
   final double sommeTotal;
+  final double totalExpenses;
 
-  const HomePageContent({super.key, required this.houseCount, required this.sommeTotal});
+  const HomePageContent({super.key, required this.houseCount, required this.sommeTotal, required this.totalExpenses});
 
   @override
   _HomePageContentState createState() => _HomePageContentState();
@@ -130,8 +150,8 @@ class _HomePageContentState extends State<HomePageContent> {
               context, 
               const PagesListView()
             ),
-            _buildStatCard('Loyer du Mois', '${widget.sommeTotal}', Icons.paid, Colors.green, context, const RentDetailsPage()),
-            _buildStatCard('Dépenses', '1200 Fcfa', Icons.money_off, Colors.red, context, const ExpenseDetailsPage()),
+            _buildStatCard('Loyer du Mois', '${widget.sommeTotal.toInt()}', Icons.paid, Colors.green, context, const RentDetailsPage()),
+            _buildStatCard('Dépenses', '${widget.totalExpenses.toInt()}', Icons.money, Colors.red, context, const ExpenseDetailsPage()),
             _buildStatCard('Profit', '5000 Fcfa', Icons.trending_up, Colors.purple, context, const ProfitDetailsPage()),
             _buildStatCard('Location', '64', Icons.person_add, Colors.blue, context, const RequestsPage()),
             _buildStatCard('Messages', '8', Icons.message, Colors.brown, context, const MessagesPage()),
