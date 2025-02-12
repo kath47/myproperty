@@ -150,8 +150,8 @@ class _HomePageContentState extends State<HomePageContent> {
               context, 
               const PagesListView()
             ),
-            _buildStatCard('Loyer du Mois', '${widget.sommeTotal.toInt()}', Icons.paid, Colors.green, context, const RentDetailsPage()),
-            _buildStatCard('Dépenses', '${widget.totalExpenses.toInt()}', Icons.money, Colors.red, context, const ExpenseDetailsPage()),
+            _buildStatCard('Loyer du Mois', '${widget.sommeTotal.toInt()} Fcfa', Icons.paid, Colors.green, context, const RentDetailsPage()),
+            _buildStatCard('Dépenses', '${widget.totalExpenses.toInt()} Fcfa', Icons.money, Colors.red, context, const ExpenseDetailsPage()),
             _buildStatCard('Profit', '5000 Fcfa', Icons.trending_up, Colors.purple, context, const ProfitDetailsPage()),
             _buildStatCard('Location', '64', Icons.person_add, Colors.blue, context, const RequestsPage()),
             _buildStatCard('Messages', '8', Icons.message, Colors.brown, context, const MessagesPage()),
@@ -178,16 +178,16 @@ class _HomePageContentState extends State<HomePageContent> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, size: 40, color: color),
-              const SizedBox(height: 10),
+              const SizedBox(height: 5),
               Text(
                 title,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 5),
               Text(
                 value,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color),
               ),
             ],
           ),

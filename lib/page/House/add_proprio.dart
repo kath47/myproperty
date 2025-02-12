@@ -91,7 +91,7 @@ class _ProprioPageState extends State<ProprioPage> {
                         items: ['Mr', 'Ms', 'Mme'].map((String value) {
                           return DropdownMenuItem<String>(
                             value: value,
-                            child: Text(value),
+                            child: Text(value, style: const TextStyle(fontSize: 12)),
                           );
                         }).toList(),
                         onChanged: (value) {
@@ -141,7 +141,7 @@ class _ProprioPageState extends State<ProprioPage> {
                   ].map((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
-                      child: Text(value),
+                      child: Text(value, style: const TextStyle(fontSize: 12)),
                     );
                   }).toList(),
                   onChanged: (value) {
@@ -210,7 +210,7 @@ class _ProprioPageState extends State<ProprioPage> {
                         items: ['Carte d\'identité', 'Attestation', 'Autres'].map((String value) {
                           return DropdownMenuItem<String>(
                             value: value,
-                            child: Text(value),
+                            child: Text(value, style: const TextStyle(fontSize: 12)),
                           );
                         }).toList(),
                         onChanged: (value) {

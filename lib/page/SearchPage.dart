@@ -57,9 +57,9 @@ class _SearchPageState extends State<SearchPage> {
                       itemBuilder: (context, index) {
                         final property = searchResults[index];
                         return ListTile(
-                          title: Text(property['name']),
-                          subtitle: Text('Catégorie: ${property['category']}'),
-                          trailing: Text('Loyer: ${property['rent']} €'),
+                          title: Text(property['titre'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          subtitle: Text('Description: ${property['description']}'),
+                          trailing: Text('Loyer: ${property['rentCost']} €', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                         );
                       },
                     ),

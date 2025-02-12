@@ -143,17 +143,17 @@ class DBHelper {
     FOREIGN KEY (propertiesId) REFERENCES Property(id)
     )
 
-  ''');
+    ''');
 
-  await db.execute('''
-      CREATE TABLE IF NOT EXISTS expenses(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        type TEXT,
-        subType TEXT,
-        amount REAL,
-        description TEXT,
-        date TEXT
-      )
+    await db.execute('''
+    CREATE TABLE IF NOT EXISTS expenses(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT,
+    subType TEXT,
+    amount REAL,
+    description TEXT,
+    date TEXT
+    )
     ''');
 
     },
@@ -286,7 +286,7 @@ class DBHelper {
     final db = await _initDB();
     return await db.query(
       'Property',
-      where: 'name LIKE ? OR adresse LIKE ?',
+      where: 'titre LIKE ? OR quartier LIKE ?',
       whereArgs: ['%$query%', '%$query%'],
     );
   }
@@ -568,19 +568,19 @@ Future<double> sumpaidofmonth() async {
 }
 
 // Méthode pour convertir le numéro du mois en nom de mois
-String _getMonthName(int month) {
-  const List<String> monthNames = [
-    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
-  ];
+// String _getMonthName(int month) {
+//   const List<String> monthNames = [
+//     "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+//     "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+//   ];
 
-  // Vérifier si le mois est valide (1 à 12)
-  if (month < 1 || month > 12) {
-    return ""; // Retourner une chaîne vide pour un mois invalide
-  }
+//   // Vérifier si le mois est valide (1 à 12)
+//   if (month < 1 || month > 12) {
+//     return ""; // Retourner une chaîne vide pour un mois invalide
+//   }
 
-  return monthNames[month - 1]; // Accéder au nom du mois (index 0 pour Janvier)
-}
+//   return monthNames[month - 1]; // Accéder au nom du mois (index 0 pour Janvier)
+// }
 
 
 Future<String?> getTenantNameById(int tenantId) async {
@@ -658,8 +658,6 @@ Future<String> getPropertyTitleById(int propertiesId) async {
       );
     });
   }
-
-
 
 }
 
